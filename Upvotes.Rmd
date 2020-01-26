@@ -1,0 +1,309 @@
+---
+title: "UpVotes Analysis and Prediction" 
+author: "Author: Anderson Hoff"
+date: "Last update: `r format(Sys.time(), '%d %B, %Y')`" 
+output:
+  html_document:
+    toc: true
+    toc_float:
+        collapsed: true
+        smooth_scroll: true
+    toc_depth: 3
+    fig_caption: yes
+    code_folding: show
+    number_sections: true
+
+fontsize: 14pt
+
+---
+
+<!---
+- Compile from command-line
+Rscript -e "rmarkdown::render('sample.Rmd', c('html_document'), clean=FALSE)"
+-->
+
+
+# Overview
+ 
+The objective of this problem is to identify the best question authors on an online question and answer platform. This identification will bring more insight into increasing the user engagement. Given the tag of the question, number of views received, number of answers, username and reputation of the question author, the problem requires you to predict the upvote count that the question will receive.
+This test is provided by [Analytics Vidhya](https://datahack.analyticsvidhya.com/contest/enigma-codefest-machine-learning-1/).
+
+```{r library, eval=TRUE, echo=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(magrittr) # for pipe
+library(caTools) # for data partition
+library(ModelMetrics) # for rmse
+library(corrplot) # correlation matrix
+```
+
+# Data analysis
+
+## Load data
+```{r LoadData, eval=TRUE, echo=FALSE}
+train_data = read.csv('train_data.csv')
+
+train_data <- train_data %>%
+  select(Upvotes, everything()) 
+```
+
+```{r kable}
+library(knitr)
+kable(train_data[1:12,])
+```
+
+\center
+| Variable  | Definition |
+|:---------:|:----------:|
+Upvotes | Number of upvotes for the question (TARGET) 
+ID | Question ID
+Tag | Anonymised tags representing question category
+Reputation | Reputation score of author
+Answer | Number of times question has been answere
+Username | Anonymised user id of question author
+Views | Number of times question has been viewed
+\center
+
+```{r, eval=TRUE, echo=TRUE}
+sum(is.na(train_data))
+
+glimpse(train_data)
+```
+
+## Graphics of data
+
+```{r}
+levels(train_data$Tag)
+ggplot(train_data, aes(x=Tag)) +
+  geom_bar()
+```
+
+```{r}
+summary(train_data$Reputation)
+reputation_groups <- cut(train_data$Reputation, breaks = 10, labels = FALSE)
+table(reputation_groups)
+```
+```{r, echo=FALSE}
+#hist(reputation_groups)
+#train_data$Reputation <- sqrt(train_data$Reputation)
+#hist(train_data$Reputation)
+```
+
+```{r, eval=TRUE}
+summary(train_data$Answers)
+ggplot(train_data, aes(x=Answers)) +
+  geom_bar()
+
+summary(train_data$Username)
+Usernames <- cut(train_data$Username, breaks = 10, labels = FALSE)
+table(Usernames)
+
+ggplot(train_data, aes(x=Usernames)) +
+  geom_bar()
+
+
+summary(train_data$Views)
+Views <- cut(train_data$Views, breaks = 10, labels = FALSE)
+table(Views)
+```
+
+```{r, echo=FALSE}
+#hist(Views)
+#train_data$Views <- log10(train_data$Views)
+#hist(logViews)
+```
+
+
+```{r, eval=TRUE}
+summary(train_data$Upvotes)
+Upvotes <- cut(train_data$Upvotes, breaks = 10, labels = FALSE)
+table(Upvotes)
+
+numeric.var <- sapply(train_data, is.numeric)
+corr.matrix <- cor(train_data[,numeric.var])
+corrplot(corr.matrix, main="\n\nCorrelation Plot for Numerical Variables", 
+         method="circle")
+```
+In statistics, the correlation coefficient r measures the strength and direction of a linear relationship between two variables on a scatterplot. The value of r is always between +1 and –1. To interpret its value, see which of the following values your correlation r is closest to.
+
+```{r}
+train_data <- train_data %>%
+  select(-ID)
+```
+
+
+  
+# Predictive Models
+
+We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).
+
+## Linear Regression Model 
+
+```{r, eval=TRUE}
+
+set.seed(seed = 2019)
+split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size of the training set
+train_set = subset(train_data, split == TRUE)
+test_set = subset(train_data, split == FALSE)
+
+lmmodel <- lm(Upvotes ~ +Tag +Reputation +Answers +Username +Views, 
+              data = train_set, singular.ok = TRUE)
+anova(lmmodel)
+summary(lmmodel)
+
+plot(lmmodel, which=1, caption = list("Residuals vs Fitted"))
+```
+
+This plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and an outcome variable and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. 
+
+```{r, eval=TRUE}
+plot(lmmodel, which=2, caption = list("", "Normal Q-Q"))
+```
+
+This plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? It’s good if residuals are lined well on the straight dashed line.
+
+```{r}
+plot(lmmodel, which=3, caption = list("", "", "Scale-Location"))
+
+```
+
+It’s also called Spread-Location plot. This plot shows if residuals are spread equally along the ranges of predictors. This is how you can check the assumption of equal variance (homoscedasticity). It’s good if you see a horizontal line with equally (randomly) spread points.
+
+```{r}
+plot(lmmodel, which=5, caption = list("", "", "", "", "Residuals vs Leverage"))
+```
+
+This plot helps us to find influential cases (i.e., subjects) if any. Not all outliers are influential in linear regression analysis (whatever outliers mean). Even though data have extreme values, they might not be influential to determine a regression line. That means, the results wouldn’t be much different if we either include or exclude them from analysis. They follow the trend in the majority of cases and they don’t really matter; they are not influential. On the other hand, some cases could be very influential even if they look to be within a reasonable range of the values. They could be extreme cases against a regression line and can alter the results if we exclude them from analysis. Another way to put it is that they don’t get along with the trend in the majority of the cases.
+
+Source of graphic explanation: [University of Virginia](https://data.library.virginia.edu/diagnostic-plots/)
+
+```{r, eval=TRUE}
+test_set$predict <- predict(lmmodel, newdata =  test_set, 
+                                        type = "response",
+                                        interval = "confidence",
+                                        family = poisson(link = ))
+
+#test_set <- test_set %>%
+#  select(predict, everything())
+
+rmse_test <- rmse(test_set$Upvotes, test_set$predict)
+```
+
+The RMSE for the testing sample is `r rmse_test`.
+
+To generate the results for the Testing sample, just run the code below, which generates a .csv file with the respective results. 
+```{r, eval=FALSE}
+test_data = read.csv('test_data.csv')
+test_data$predict <- predict.lm(lmmodel, newdata = test_data, 
+                                type = "response",
+                                interval = "confidence",
+                                family = poisson())
+
+test_data$predict <- as.integer(test_data$predict)
+
+write.table(cbind(test_data$ID,test_data$predict),
+            file="Upvotes_LM.csv", 
+            sep = ",", quote = FALSE, col.names = c('ID','Upvotes'), 
+            row.names=F)
+```
+
+
+
+## Non-Linear Regresion Model
+
+
+# Others...
+
+A much more elegant and powerful solution is to create fully interactive tables with the [`DT` package](https://rstudio.github.io/DT/). 
+This JavaScirpt based environment provides a wrapper to the DataTables library using jQuery. The resulting tables can be sorted, queried and resized by the
+user. 
+
+```{r dt, eval=FALSE}
+library(DT)
+datatable(iris, filter = 'top', options = list(
+  pageLength = 100, scrollX = TRUE, scrollY = "600px", autoWidth = TRUE
+))
+```
+
+### Figures
+
+Plots generated by the R code chunks in an R Markdown document can be automatically 
+inserted in the output file. The size of the figure can be controlled with the `fig.height`
+and `fig.width` arguments.
+
+```{r some_jitter_plot, eval=TRUE}
+library(ggplot2)
+dsmall <- diamonds[sample(nrow(diamonds), 1000), ]
+ggplot(dsmall, aes(color, price/carat)) + geom_jitter(alpha = I(1 / 2), aes(color=color))
+```
+
+Sometimes it can be useful to explicitly write an image to a file and then insert that 
+image into the final document by referencing its file name in the R Markdown source. For 
+instance, this can be useful for time consuming analyses. The following code will generate a 
+file named `myplot.png`. To insert the file  in the final document, one can use standard 
+Markdown or HTML syntax, _e.g._: `<img src="myplot.png"/>`.  
+
+```{r some_custom_inserted_plot, eval=TRUE, warning=FALSE, message=FALSE}
+png("myplot.png")
+ggplot(dsmall, aes(color, price/carat)) + geom_jitter(alpha = I(1 / 2), aes(color=color))
+dev.off()
+```
+<center><img title="some_title" src="myplot.png"/></center>
+
+### Inline R code
+
+To evaluate R code inline, one can enclose an R expression with a single back-tick
+followed by `r` and then the actual expression.  For instance, the back-ticked version 
+of 'r 1 + 1' evaluates to `r 1 + 1` and 'r pi' evaluates to `r pi`.
+
+### Mathematical equations
+
+To render mathematical equations, one can use standard Latex syntax. When expressions are 
+enclosed with single `$` signs then they will be shown inline, while 
+enclosing them with double `$$` signs will show them in display mode. For instance, the following 
+Latex syntax `d(X,Y) = \sqrt[]{ \sum_{i=1}^{n}{(x_{i}-y_{i})^2} }` renders in display mode as follows:
+
+$$d(X,Y) = \sqrt[]{ \sum_{i=1}^{n}{(x_{i}-y_{i})^2} }$$
+
+### Citations and bibliographies
+
+Citations and bibliographies can be autogenerated in R Markdown in a similar
+way as in Latex/Bibtex. Reference collections should be stored in a separate
+file in Bibtex or other supported formats. To cite a publication in an R Markdown 
+script, one uses the syntax `[@<id1>]` where `<id1>` needs to be replaced with a 
+reference identifier present in the Bibtex database listed in the metadata section 
+of the R Markdown script  (_e.g._ `bibtex.bib`). For instance, to cite Lawrence et al. 
+(2013), one  uses its reference identifier (_e.g._ `Lawrence2013-kt`) as `<id1>` [@Lawrence2013-kt]. 
+This will place the citation inline in the text and add the corresponding
+reference to a reference list at the end of the output document. For the latter a 
+special section called `References` needs to be specified at the end of the R Markdown script.
+To fine control the formatting of citations and reference lists, users want to consult this 
+the corresponding [R Markdown page](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html).
+Also, for general reference management and outputting references in Bibtex format [Paperpile](https://paperpile.com/features) 
+can be very helpful.
+
+
+### Viewing R Markdown report on HPCC cluster
+
+R Markdown reports located on UCR's HPCC Cluster can be viewed locally in a web browser (without moving 
+the source HTML) by creating a symbolic link from a user's `.html` directory. This way any updates to 
+the report will show up immediately without creating another copy of the HTML file. For instance, if user 
+`ttest` has generated an R Markdown report under `~/bigdata/today/rmarkdown/sample.html`, then the 
+symbolic link can be created as follows:
+
+```{r rmarkdown_symbolic_link, eval=FALSE}
+cd ~/.html
+ln -s ~/bigdata/today/rmarkdown/sample.html sample.html
+```
+
+After this one can view the report in a web browser using this URL [http://biocluster.ucr.edu/~ttest/rmarkdown/sample.html](http://biocluster.ucr.edu/~ttest/rmarkdown/sample.html).
+If necessary access to the URL can be restricted with a password following the instructions [here](http://hpcc.ucr.edu/manuals_linux-cluster_sharing.html#sharing-files-on-the-web).
+
+
+# Session Info
+
+```{r sessionInfo}
+sessionInfo()
+```
+
+# References
