@@ -49,10 +49,9 @@ train_data <- train_data %>%
 
 ```{r kable}
 library(knitr)
-kable(train_data[1:12,])
+kable(train_data[1:10,])
 ```
 
-\center
 | Variable  | Definition |
 |:---------:|:----------:|
 Upvotes | Number of upvotes for the question (TARGET) 
@@ -62,7 +61,6 @@ Reputation | Reputation score of author
 Answer | Number of times question has been answere
 Username | Anonymised user id of question author
 Views | Number of times question has been viewed
-\center
 
 ```{r, eval=TRUE, echo=TRUE}
 sum(is.na(train_data))
@@ -217,7 +215,7 @@ write.table(cbind(test_data$ID,test_data$predict),
 ```{r, eval=TRUE}
 train_data <- train_data2
 set.seed(seed = 2020)
-split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size of the training set
+split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
@@ -225,7 +223,7 @@ glmmodel <- glm(Upvotes ~ .,
                 train_set, family = quasi(link = "identity"))
 #anova(glmmodel)
 summary(glmmodel)
-#plot(glmmodel)
+plot(glmmodel)
 
 test_set$predict <- predict.glm(glmmodel, newdata =  test_set,
                                 type = "response",
@@ -241,9 +239,9 @@ The RMSE for the testing sample is `r nlm_rmse`.
 
 ```{r, eval=FALSE}
 library(neuralnet)
-
+train_data <- train_data2
 train_net <- train_data %>%
-  select(-ID, -Tag, - Upvotes)
+  select(-Tag, - Upvotes)
 
 Upvotes <- select(train_data, 1)
 
@@ -271,18 +269,19 @@ nnmodel <- neuralnet(train_net$Upvotes ~ +Reputation +Answers +Username +Views,
                      lifesign = "minimum",
                      rep = 3)
 #print(nnmodel)
-plot(nnmodel)
+#plot(nnmodel)
 ```
 
 ## XGBoost analysis
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 library(xgboost)
 library(Matrix)
 library(Ckmeans.1d.dp)
 
+train_data <- train_data2
 set.seed(seed = 2019)
-split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size of the training set
+split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
