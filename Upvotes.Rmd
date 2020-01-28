@@ -127,8 +127,10 @@ corrplot(corr.matrix, main="\n\nCorrelation Plot for Numerical Variables",
 In statistics, the correlation coefficient r measures the strength and direction of a linear relationship between two variables on a scatterplot. The value of r is always between +1 and –1. To interpret its value, see which of the following values your correlation r is closest to.
 
 ```{r}
-train_data <- train_data %>%
+train_data2 <- train_data %>%
   select(-ID)
+
+train_data <- train_data2
 ```
 
 
@@ -212,13 +214,14 @@ write.table(cbind(test_data$ID,test_data$predict),
 
 ## Non-Linear Regresion Model
 
-```{r}
-set.seed(seed = 2019)
+```{r, eval=TRUE}
+train_data <- train_data2
+set.seed(seed = 2020)
 split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size of the training set
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
-glmmodel <- glm(Upvotes ~ . -ID, 
+glmmodel <- glm(Upvotes ~ ., 
                 train_set, family = quasi(link = "identity"))
 #anova(glmmodel)
 summary(glmmodel)
@@ -272,7 +275,6 @@ plot(nnmodel)
 ```
 
 ## XGBoost analysis
-
 
 ```{r, eval=FALSE}
 library(xgboost)
