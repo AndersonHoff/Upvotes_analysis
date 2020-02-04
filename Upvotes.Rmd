@@ -19,7 +19,7 @@ fontsize: 14pt
 
 <!---
 - Compile from command-line
-Rscript -e "rmarkdown::render('sample.Rmd', c('html_document'), clean=FALSE)"
+Rscript -e "rmarkdown::render('Upvotes.Rmd', c('html_document'), clean=FALSE)"
 -->
 
 
@@ -40,6 +40,9 @@ library(corrplot) # correlation matrix
 # Data analysis
 
 ## Load data
+
+The data used in this analysis is composed by a training set and a test set. In will be dealing with the training data. 
+
 ```{r LoadData, eval=TRUE, echo=FALSE}
 train_data = read.csv('train_data.csv')
 
@@ -58,7 +61,7 @@ Upvotes | Number of upvotes for the question (TARGET)
 ID | Question ID
 Tag | Anonymised tags representing question category
 Reputation | Reputation score of author
-Answer | Number of times question has been answere
+Answer | Number of times question has been answered
 Username | Anonymised user id of question author
 Views | Number of times question has been viewed
 
@@ -122,7 +125,13 @@ corr.matrix <- cor(train_data[,numeric.var])
 corrplot(corr.matrix, main="\n\nCorrelation Plot for Numerical Variables", 
          method="circle")
 ```
-In statistics, the correlation coefficient r measures the strength and direction of a linear relationship between two variables on a scatterplot. The value of r is always between +1 and –1. To interpret its value, see which of the following values your correlation r is closest to.
+
+In statistics, the correlation coefficient *cc* measures the strength and direction of a linear relationship between two variables on a scatterplot. The value of *cc* is always between +1 and –1. To interpret its value, see which of the following values your correlation *cc* is closest to: 
+
+* -1 : indicates a strong negative correlation (if one variable increases, the other decreases).  
+* 0 : there is no association between the two variables.  
+* +1 : indicates a stron positive correlation: (both variables vary in the same way).  
+
 
 ```{r}
 train_data2 <- train_data %>%
@@ -131,11 +140,12 @@ train_data2 <- train_data %>%
 train_data <- train_data2
 ```
 
-
-  
 # Predictive Models
 
-We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).
+We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).  
+The RMSE is a standard way to measure the error of a model in predicting quantitative data. Formally it is defined as 
+$$RMSE = \sqrt{\sum(ŷ_i - y_i)/n}$$
+
 
 ## Linear Regression Model 
 
@@ -223,7 +233,7 @@ glmmodel <- glm(Upvotes ~ .,
                 train_set, family = quasi(link = "identity"))
 #anova(glmmodel)
 summary(glmmodel)
-plot(glmmodel)
+#plot(glmmodel)
 
 test_set$predict <- predict.glm(glmmodel, newdata =  test_set,
                                 type = "response",
@@ -274,7 +284,7 @@ nnmodel <- neuralnet(train_net$Upvotes ~ +Reputation +Answers +Username +Views,
 
 ## XGBoost analysis
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 library(xgboost)
 library(Matrix)
 library(Ckmeans.1d.dp)
