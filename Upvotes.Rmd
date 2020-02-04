@@ -10,7 +10,7 @@ output:
         smooth_scroll: true
     toc_depth: 3
     fig_caption: yes
-    code_folding: show
+    code_folding: hide
     number_sections: true
 
 fontsize: 14pt
@@ -42,7 +42,7 @@ library(corrplot) # correlation matrix
 
 ## Load data
 
-The data used in this analysis is composed by a training set and a test set. In will be dealing with the training data. 
+The data used in this analysis is composed by a training set and a test set. In this part I will be dealing with the training dataset. This is how it looks like.
 
 ```{r LoadData, eval=TRUE, echo=FALSE}
 train_data = read.csv('train_data.csv')
@@ -52,7 +52,7 @@ train_data <- train_data %>%
 ```
 
 ```{r kable}
-library(knitr)
+if(!require(knitr)) {install.packages("knitr")} else {library(knitr)}
 kable(train_data[1:10,])
 ```
 
@@ -66,18 +66,36 @@ Answer | Number of times question has been answered
 Username | Anonymised user id of question author
 Views | Number of times question has been viewed
 
+As can be seen, the target is to predict the number of positive votes a question receive, based on the features described above.  
+The table below show the type of each column of the data. Apart from "TAG", all other columns are numeric.
 ```{r, eval=TRUE, echo=TRUE}
+glimpse(train_data)
+
+```
+It is important to identify missing values (NA's) on the data. The result obtained below tell us that there are not NA cells in the numeric columns.
+
+```{r, eval=TRUE, echo=TRUE}
+
 sum(is.na(train_data))
 
-glimpse(train_data)
+```
+
+Also, there is not a blank categorical cell in the TAG column, since the line below contain only letters. 
+
+```{r}
+levels(train_data$Tag)
+
 ```
 
 ## Graphics of data
 
 ```{r}
-levels(train_data$Tag)
-ggplot(train_data, aes(x=Tag)) +
-  geom_bar()
+ggplot(train_data, aes(x=Tag), fill = Var1) +
+  geom_bar() + 
+  ggtitle("TAG frequency")+
+  coord_flip()+
+  ylab("Number of frequency")+
+  xlab("TAG")
 ```
 
 ```{r}
