@@ -90,8 +90,10 @@ levels(train_data$Tag)
 ## Graphics of data
 
 ```{r}
-ggplot(train_data, aes(x=Tag), fill = Var1) +
-  geom_bar() + 
+table(train_data$Tag)
+
+ggplot(train_data, aes(x=Tag)) +
+  geom_bar(aes(fill=Tag)) + 
   ggtitle("TAG frequency")+
   coord_flip()+
   ylab("Number of frequency")+
@@ -111,15 +113,24 @@ table(reputation_groups)
 
 ```{r, eval=TRUE}
 summary(train_data$Answers)
+
 ggplot(train_data, aes(x=Answers)) +
-  geom_bar()
+  geom_bar(aes(fill=Answers)) + 
+  ggtitle("Answers frequency")+
+  coord_flip()+
+  ylab("Number of frequency")+
+  xlab("Answers")
 
 summary(train_data$Username)
 Usernames <- cut(train_data$Username, breaks = 10, labels = FALSE)
 table(Usernames)
 
 ggplot(train_data, aes(x=Usernames)) +
-  geom_bar()
+  geom_bar(aes(fill=Usernames)) + 
+  ggtitle("Usernames frequency")+
+  coord_flip()+
+  ylab("Number of frequency")+
+  xlab("Usernames")
 
 
 summary(train_data$Views)
