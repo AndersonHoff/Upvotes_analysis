@@ -22,6 +22,7 @@ fontsize: 14pt
 Rscript -e "rmarkdown::render('Upvotes.Rmd', c('html_document'), clean=FALSE)"
 -->
 
+The main objective of this project is to learn and practice some technical duties about data analysis and graph generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, it is an excellent oportunity to practice my English skills. 
 
 # Overview
  
@@ -145,7 +146,7 @@ train_data <- train_data2
 We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).  
 The RMSE is a standard way to measure the error of a model in predicting quantitative data. Formally it is defined as 
 $$RMSE = \sqrt{\sum(ŷ_i - y_i)/n}$$
-
+The RMSE can be tought as a distance between the vector of predicted values and the vector of observed values.
 
 ## Linear Regression Model 
 
