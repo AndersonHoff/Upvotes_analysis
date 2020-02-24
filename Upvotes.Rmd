@@ -84,10 +84,11 @@ Also, there is not a blank categorical cell in the TAG column, since the line be
 
 ```{r}
 levels(train_data$Tag)
-
 ```
 
 ## Graphics of data
+
+In order to observe how the data is spread in each column, some graphs  and tables were created. 
 
 ```{r}
 table(train_data$Tag)
