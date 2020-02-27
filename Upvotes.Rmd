@@ -10,19 +10,17 @@ output:
         smooth_scroll: true
     toc_depth: 3
     fig_caption: yes
-    code_folding: hide
     number_sections: true
 
 fontsize: 14pt
-
 ---
 
 <!---
 - Compile from command-line
 Rscript -e "rmarkdown::render('Upvotes.Rmd', c('html_document'), clean=FALSE)"
 -->
-
-The main objective of this project is to learn and practice some technical duties about data analysis and graph generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, it is an excellent oportunity to practice my English skills. 
+<br>
+The main objective of this project is to learn and practice some technical duties about data analysis and graph generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, it is an excellent oportunity to practice my English skills.  
 
 # Overview
  
@@ -30,12 +28,13 @@ The objective of this problem is to identify the best question authors on an onl
 This test is provided by [Analytics Vidhya](https://datahack.analyticsvidhya.com/contest/enigma-codefest-machine-learning-1/).
 
 ```{r library, eval=TRUE, echo=FALSE, message=FALSE}
-library(dplyr)
-library(ggplot2)
-library(magrittr) # for pipe
-library(caTools) # for data partition
-library(ModelMetrics) # for rmse
-library(corrplot) # correlation matrix
+if(!require(dplyr)) {istall.packages("dplyr")} else {library(dplyr)}
+if(!require(ggplot2)) {install.packages("ggplot2")} else {library(ggplot2)}
+if(!require(magrittr)) {install.packages("magrittr")} else {library(magrittr)} # for pipe
+if(!require(caTools)) {install.packages("caTools")} else {library(caTools)} # for data partition
+if(!require(ModelMetrics)) {install.packages("ModelMetrics")} else {library(ModelMetrics)} # for rmse
+if(!require(corrplot)) {install.packages("corrplot")} else {library(corrplot)} # correlation matrix
+if(!require(knitr)) {install.packages("knitr")} else {library(knitr)} # for floating tables 
 ```
 
 # Data analysis
@@ -44,16 +43,14 @@ library(corrplot) # correlation matrix
 
 The data used in this analysis is composed by a training set and a test set. In this part I will be dealing with the training dataset. This is how it looks like.
 
-```{r LoadData, eval=TRUE, echo=FALSE}
+```{r LoadData, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 train_data = read.csv('train_data.csv')
 
 train_data <- train_data %>%
   select(Upvotes, everything()) 
-```
 
-```{r kable}
-if(!require(knitr)) {install.packages("knitr")} else {library(knitr)}
 kable(train_data[1:10,])
+
 ```
 
 | Variable  | Definition |
@@ -68,49 +65,53 @@ Views | Number of times question has been viewed
 
 As can be seen, the target is to predict the number of positive votes a question receive, based on the features described above.  
 The table below show the type of each column of the data. Apart from "TAG", all other columns are numeric.
-```{r, eval=TRUE, echo=TRUE}
+```{r, eval=TRUE, echo=FALSE}
 glimpse(train_data)
 
+summary(train_data)
+
 ```
-It is important to identify missing values (NA's) on the data. The result obtained below tell us that there are not NA cells in the numeric columns.
+It is important to identify missing values (NA's) on the tables, from both numeric ans categorical data. The result obtained below tell us that there are not empty cells in the numeric columns.
 
 ```{r, eval=TRUE, echo=TRUE}
 
 sum(is.na(train_data))
 
-```
-
-Also, there is not a blank categorical cell in the TAG column, since the line below contain only letters. 
-
-```{r}
 levels(train_data$Tag)
 ```
 
-## Graphics of data
+Also, there is not a blank categorical cell in the TAG column, since the line above contain only letters.  
+These results means the dataset is usable and we can start try to extract relevant information from it.
 
-In order to observe how the data is spread in each column, some graphs  and tables were created. 
+## Graphs of data
 
+In order to observe how the data is spread in each column, some graphs  and tables were created. The ID column contain a different number to identify each question, and this nuber is never repeated. By this way, we will not use this column in the analysis.
+
+### Tag
 ```{r}
 table(train_data$Tag)
+```
+<br>
+The table above show us the question category is spread in different letters, and the graph below indicates it is reasobly distributed between them.  
 
+```{r}
 ggplot(train_data, aes(x=Tag)) +
   geom_bar(aes(fill=Tag)) + 
   ggtitle("TAG frequency")+
   coord_flip()+
-  ylab("Number of frequency")+
+  ylab("Frequency")+
   xlab("TAG")
 ```
 
+### Reputation
 ```{r}
 summary(train_data$Reputation)
 reputation_groups <- cut(train_data$Reputation, breaks = 10, labels = FALSE)
 table(reputation_groups)
-```
-```{r, echo=FALSE}
-#hist(reputation_groups)
-#train_data$Reputation <- sqrt(train_data$Reputation)
 #hist(train_data$Reputation)
 ```
+<br>
+From the table above, we observe almost of Reputation data is in the first column. This means most of the Reputaion is low, and in this case, a graphic will not add any knowledge.
 
 ```{r, eval=TRUE}
 summary(train_data$Answers)
@@ -119,9 +120,11 @@ ggplot(train_data, aes(x=Answers)) +
   geom_bar(aes(fill=Answers)) + 
   ggtitle("Answers frequency")+
   coord_flip()+
-  ylab("Number of frequency")+
+  ylab("Frequency")+
   xlab("Answers")
+```
 
+```{r, eval=TRUE}
 summary(train_data$Username)
 Usernames <- cut(train_data$Username, breaks = 10, labels = FALSE)
 table(Usernames)
