@@ -197,7 +197,7 @@ split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
-lmmodel <- lm(Upvotes ~ +Tag +Reputation +Answers +Username +Views, 
+lmmodel <- lm(Upvotes ~ +Tag +Reputation +Answers +Views, 
               data = train_set, singular.ok = TRUE)
 anova(lmmodel)
 summary(lmmodel)
