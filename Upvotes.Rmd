@@ -99,6 +99,7 @@ ggplot(train_data, aes(x=Tag)) +
   geom_bar(aes(fill=Tag)) + 
   ggtitle("TAG frequency")+
   coord_flip()+
+  theme_bw()+
   ylab("Frequency")+
   xlab("TAG")
 ```
@@ -108,7 +109,6 @@ ggplot(train_data, aes(x=Tag)) +
 summary(train_data$Reputation)
 reputation_groups <- cut(train_data$Reputation, breaks = 10, labels = FALSE)
 table(reputation_groups)
-#hist(train_data$Reputation)
 ```
 <br>
 From the table above, we observe almost of Reputation data is in the first column. This means most of the Reputaion is low, and in this case, a graphic will not add any knowledge.
@@ -120,6 +120,7 @@ ggplot(train_data, aes(x=Answers)) +
   geom_bar(aes(fill=Answers)) + 
   ggtitle("Answers frequency")+
   coord_flip()+
+  theme_bw()+
   ylab("Frequency")+
   xlab("Answers")
 ```
@@ -165,15 +166,21 @@ In statistics, the correlation coefficient *cc* measures the strength and direct
 * -1 : indicates a strong negative correlation (if one variable increases, the other decreases).  
 * 0 : there is no association between the two variables.  
 * +1 : indicates a stron positive correlation: (both variables vary in the same way).  
+<br>
+From the results, we observe there is no correlation between Upvotes (the target) and ID or Username. Since there is one ID for each question, this result is reasonable. The same occurs for Username.  
+Due to these results, we skip these two columns for the training process.
 
+```{r}
+train_data <- train_data %>%
+  select(-ID)
+```
 
 ```{r}
 train_data2 <- train_data %>%
-  select(-ID)
+  select(-Username)
 
-train_data <- train_data2
+traindata <- train_data2
 ```
-
 # Predictive Models
 
 We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).  
