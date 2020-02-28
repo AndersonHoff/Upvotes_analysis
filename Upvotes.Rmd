@@ -172,15 +172,9 @@ Due to these results, we skip these two columns for the training process.
 
 ```{r}
 train_data <- train_data %>%
-  select(-ID, -Username)
+  select( -Username)
 ```
 
-```{r, eval=FALSE}
-train_data2 <- train_data %>%
-  select(-Username)
-
-traindata <- train_data2
-```
 # Predictive Models
 
 We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).  
@@ -229,19 +223,24 @@ This plot helps us to find influential cases (i.e., subjects) if any. Not all ou
 Source of graphic explanation: [University of Virginia](https://data.library.virginia.edu/diagnostic-plots/)
 
 ```{r, eval=TRUE}
-test_set$predict <- predict(lmmodel, newdata =  test_set, 
+predict_lm <- predict(lmmodel, newdata =  test_set, 
                                         type = "response",
                                         interval = "confidence",
                                         family = poisson(link = ))
 
-#test_set <- test_set %>%
-#  select(predict, everything())
+predict <- as.data.frame(predict_lm)
+
+test_set$predict <- predict$fit
+
+ggplot()+
+  geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")
 
 rmse_lm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 ```
 
-The RMSE for the testing sample is `r rmse_lm`.
-
+The RMSE for the testing sample is `r rmse_lm`.  
+<br>
 To generate the results for the Testing sample, just run the code below, which generates a .csv file with the respective results. 
 
 ```{r, eval=FALSE}

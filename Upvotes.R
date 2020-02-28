@@ -22,7 +22,7 @@ sum(is.na(train_data))
 levels(train_data$Tag)
 
 train_data <- train_data %>%
-  select( -ID, -Username)
+  select( -Username)
 
 ## Linear Regresion Model ##
 
@@ -33,36 +33,46 @@ test_set = subset(train_data, split == FALSE)
 
 lmmodel <- lm(Upvotes ~ +Tag +Reputation +Answers +Views, 
               data = train_set, singular.ok = TRUE)
-#anova(lmmodel)
-#summary(lmmodel)
 
-test_set$predict <- predict(lmmodel, newdata =  test_set, 
+predict_lm <- predict(lmmodel, newdata =  test_set, 
                             type = "response",
                             interval = "confidence",
                             family = poisson(link = ))
 
+predict <- as.data.frame(predict_lm)
+
+test_set$predict <- predict$fit
+
 rmse_lm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 
-rm(lmmodel,split,test_set,train_set)
+ggplot()+
+  geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")
+
+rm(lmmodel,split,test_set,train_set, predict_lm, predict)
 
 ## Non-linear Regresion Model ##
 
-set.seed(seed = 2020)
+set.seed(seed = 2019)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
 glmmodel <- glm(Upvotes ~ +Tag +Reputation +Answers +Views, 
                 train_set, family = quasi(link = "identity"))
-#anova(glmmodel)
-#summary(glmmodel)
-#plot(glmmodel)
 
 test_set$predict <- predict.glm(glmmodel, newdata =  test_set,
                                 type = "response",
                                 family = poisson())
 
 rmse_nlm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
+
+ggplot()+
+  geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")+
+  theme_bw()+
+  ylab("Frequency")+
+  xlab("TAG")
 
 rm(glmmodel,split,test_set,train_set)
 
