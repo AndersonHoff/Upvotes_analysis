@@ -172,10 +172,10 @@ Due to these results, we skip these two columns for the training process.
 
 ```{r}
 train_data <- train_data %>%
-  select(-ID)
+  select(-ID, -Username)
 ```
 
-```{r}
+```{r, eval=FALSE}
 train_data2 <- train_data %>%
   select(-Username)
 
@@ -237,7 +237,7 @@ test_set$predict <- predict(lmmodel, newdata =  test_set,
 #test_set <- test_set %>%
 #  select(predict, everything())
 
-rmse_lm <- rmse(test_set$Upvotes, test_set$predict)
+rmse_lm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 ```
 
 The RMSE for the testing sample is `r rmse_lm`.
@@ -264,7 +264,6 @@ write.table(cbind(test_data$ID,test_data$predict),
 ## Non-Linear Regresion Model
 
 ```{r, eval=TRUE}
-train_data <- train_data2
 set.seed(seed = 2020)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
@@ -290,7 +289,6 @@ The RMSE for the testing sample is `r nlm_rmse`.
 
 ```{r, eval=FALSE}
 library(neuralnet)
-train_data <- train_data2
 train_net <- train_data %>%
   select(-Tag, - Upvotes)
 
