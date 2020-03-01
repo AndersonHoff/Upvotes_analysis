@@ -76,13 +76,13 @@ ggplot()+
 
 rm(glmmodel,split,test_set,train_set)
 
-## XGBoost model ##201888
+## XGBoost model ##
 
 if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
 if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
 if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
 
-number <- 201888
+number <- 2020
 set.seed(seed = number)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
@@ -110,8 +110,8 @@ watchlist <- list(train = mtrain_set, test = mtest_set)
 xgbmodel <- xgb.train(parameters = xgb_param, 
                       data = mtrain_set, 
                       max.depth = 10,
-                      nrounds = 60,
                       watchlist = watchlist,
+                      nrounds = 40,
                       eta = 0.1)
 
 eval <- data.frame(xgbmodel$evaluation_log)
@@ -119,12 +119,10 @@ plot(eval$iter, eval$test_rmse, col = 'blue')
 
 pred <- predict(xgbmodel, newdata = mtest_set)
 
-result <- as.data.frame(cbind(test_set$Upvotes, pred))
-
-rmse_xgb <- as.integer(rmse(test_set$Upvotes, pred))
+xgb_rmse <- as.integer(rmse(test_set$Upvotes, pred))
 
 rm(split, test_label,test_set, train_label, train_set, testdumb, traindumb,
-   watchlist,xgbmodel, xgb_param, result, eval, mtest_set, mtrain_set)
+   watchlist,xgbmodel, xgb_param, eval, mtest_set, mtrain_set)
 
 ## Keras Model ##
 

@@ -259,7 +259,6 @@ write.table(cbind(test_data$ID,test_data$predict),
 ```
 
 
-
 ## Non-Linear Regresion Model
 
 ```{r, eval=TRUE}
@@ -322,17 +321,20 @@ nnmodel <- neuralnet(train_net$Upvotes ~ +Reputation +Answers +Username +Views,
 
 ## XGBoost analysis
 
-```{r, eval=FALSE}
-library(xgboost)
-library(Matrix)
-library(Ckmeans.1d.dp)
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
 
-train_data <- train_data2
-set.seed(seed = 2019)
+if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
+if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
+if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
+
+number <- 2020
+set.seed(seed = number)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
+```
 
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
 traindumb <- sparse.model.matrix(Upvotes ~. -1 , data = train_set)
 
 train_label <- train_set[,"Upvotes"]
@@ -352,14 +354,18 @@ xgb_param <- list("booster" = "gblinear",
                   "eval_metric" = "rmsle")
 
 watchlist <- list(train = mtrain_set, test = mtest_set)
+```
 
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 xgbmodel <- xgb.train(parameters = xgb_param, 
                       data = mtrain_set, 
                       max.depth = 10,
-                      nrounds = 40,
                       watchlist = watchlist,
+                      nrounds = 40,
                       eta = 0.1)
+```
 
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
 eval <- data.frame(xgbmodel$evaluation_log)
 plot(eval$iter, eval$test_rmse, col = 'blue')
 
@@ -370,19 +376,23 @@ pred <- predict(xgbmodel, newdata = mtest_set)
 
 result <- as.data.frame(cbind(test_set$Upvotes, pred))
 
-rmse(test_set$Upvotes, pred)
-#1256
+xgb_rmse <- as.integer(rmse(test_set$Upvotes, pred))
 
 ggplot(result,aes(result$pred, result$V1)) + geom_point(color = "darkred", alpha = 0.5) + 
   geom_smooth(method=lm)+ ggtitle('Linear Regression ') + ggtitle("Extreme Gradient Boosting: Prediction vs Test Data") +
   xlab("Predecited Upvotes") + ylab("Observed Upvotes") + 
   theme(plot.title = element_text(color="darkgreen",size=16,hjust = 0.5),
         axis.text.y = element_text(size=12), axis.text.x = element_text(size=12,hjust=.5),
-        axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+       axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+
+rm(split, test_label,test_set, train_label, train_set, testdumb, traindumb,
+   watchlist,xgbmodel, xgb_param, result, eval, mtest_set, mtrain_set)
 ```
+
+For the XGBoost analysis, the RMSE for the testing sample is `r xgb_rmse`.
 
 # Session Info
 
-```{r sessionInfo}
+```{r sessionInfo, eval=FALSE}
 sessionInfo()
 ```
