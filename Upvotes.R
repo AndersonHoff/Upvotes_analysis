@@ -22,7 +22,7 @@ sum(is.na(train_data))
 levels(train_data$Tag)
 
 train_data <- train_data %>%
-  select( -Username, -ID)
+  select( -Username)
 
 ## Linear Regresion Model ##
 
@@ -51,7 +51,10 @@ rmse_lm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 
 ggplot()+
   geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
-  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")+
+  theme_bw()+
+  ylab("Predict, Upvotes")+
+  xlab("ID")
 
 rm(lmmodel,split,test_set,train_set, predict_lm, predict)
 
@@ -75,8 +78,8 @@ ggplot()+
   geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
   geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")+
   theme_bw()+
-  ylab("Frequency")+
-  xlab("TAG")
+  ylab("Predict, Upvotes")+
+  xlab("ID")
 
 rm(glmmodel,split,test_set,train_set)
 
@@ -90,7 +93,7 @@ nn_model <- neuralnet(Upvotes)
 if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
 if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
 if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
-
+library(keras)
 train_data = read.csv('train_data.csv')
 
 train_data <- train_data %>%
@@ -115,6 +118,7 @@ test_set <- maxmin_data[ind==2, 2:7]
 train_target <- maxmin_data[ind==1, 1]
 test_target <- maxmin_data[ind==2, 1]
 
+
 k_model <- keras_model_sequential() 
 k_model %>% 
   layer_dense(units = 18, activation = 'relu', 
@@ -133,9 +137,10 @@ k_model %>% compile(
 
 history <- k_model %>% fit(
   train_set, train_target, 
-  epochs = 7, batch_size = 50, 
+  epochs = 2, batch_size = 50, 
   validation_split = 0.1
 )
+#epoch = 7 - ~1400 epoch = 2 - ~2100
 
 k_model %>% evaluate(test_set, test_target)
 
@@ -144,10 +149,10 @@ predicted=pred$y * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes
 actual=test_target * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes)
 result <- data.frame(predicted,actual)
 
-as.integer(rmse(result$actual, result$predicted))
+rmse_keras <- as.integer(rmse(result$actual, result$predicted))
 
-
-
+rm(actual, history, ind, k_model, maxmin_data, normalize, pred, predicted, result,
+   test_set, test_target, train_set, train_target)
 
 
 data_matrix <- as.matrix(train_data)

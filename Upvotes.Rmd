@@ -1,33 +1,38 @@
 ---
-title: "UpVotes Analysis and Prediction" 
+title: "UpVotes Challenge: Analysis and Prediction" 
 author: "Author: Anderson Hoff"
 date: "Last update: `r format(Sys.time(), '%d %B, %Y')`" 
 output:
   html_document:
-    toc: true
+    toc: FALSE
     toc_float:
         collapsed: true
         smooth_scroll: true
-    toc_depth: 3
+    toc_depth: 2
     fig_caption: yes
-    number_sections: true
-
+    number_sections: False
 fontsize: 14pt
 ---
 
-<!---
-- Compile from command-line
+<!-- Compile from command-line
 Rscript -e "rmarkdown::render('Upvotes.Rmd', c('html_document'), clean=FALSE)"
 -->
+
+<!-- To comment a line Ctrl+Shift+C -->
+
+#  {.tabset .tabset-fade .tabset-pills}
+
+## OVERVIEW
 <br>
-The main objective of this project is to learn and practice some technical duties about data analysis and graph generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, it is an excellent oportunity to practice my English skills.  
+The main objective of this project is to learn and practice some technical duties about data analysis and graphic generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, that is an excellent oportunity to practice my English skills.  
 
-# Overview
- 
-The objective of this problem is to identify the best question authors on an online question and answer platform. This identification will bring more insight into increasing the user engagement. Given the tag of the question, number of views received, number of answers, username and reputation of the question author, the problem requires you to predict the upvote count that the question will receive.
-This test is provided by [Analytics Vidhya](https://datahack.analyticsvidhya.com/contest/enigma-codefest-machine-learning-1/).
+The challenge of this problem is to identify the best question authors from an on-line question and answer platform. This identification will bring more insight into increasing the user engagement. By trhis way, given the tag of the question, number of views received, number of answers, username and reputation of the question author, the problem requires you to predict the up votes number that determined question will receives.  
 
-```{r library, eval=TRUE, echo=FALSE, message=FALSE}
+This test is provided by [Analytics Vidhya](https://datahack.analyticsvidhya.com/contest/enigma-codefest-machine-learning-1/).  
+
+## REQUIRED PACKAGES
+
+```{r library, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
 if(!require(dplyr)) {istall.packages("dplyr")} else {library(dplyr)}
 if(!require(ggplot2)) {install.packages("ggplot2")} else {library(ggplot2)}
 if(!require(magrittr)) {install.packages("magrittr")} else {library(magrittr)} # for pipe
@@ -35,11 +40,17 @@ if(!require(caTools)) {install.packages("caTools")} else {library(caTools)} # fo
 if(!require(ModelMetrics)) {install.packages("ModelMetrics")} else {library(ModelMetrics)} # for rmse
 if(!require(corrplot)) {install.packages("corrplot")} else {library(corrplot)} # correlation matrix
 if(!require(knitr)) {install.packages("knitr")} else {library(knitr)} # for floating tables 
+library(neuralnet)
+#XGBoost analysis
+if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
+if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
+if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
+if(!require(keras)) {install.packages("keras")} else {library(keras)}
 ```
 
-# Data analysis
+## DATA ANALYSIS
 
-## Load data
+### Load data
 
 The data used in this analysis is composed by a training set and a test set. In this part I will be dealing with the training dataset. This is how it looks like.
 
@@ -49,7 +60,7 @@ train_data = read.csv('train_data.csv')
 train_data <- train_data %>%
   select(Upvotes, everything()) 
 
-kable(train_data[1:10,])
+kable(train_data[1:10,], align="cr")
 
 ```
 
@@ -83,11 +94,11 @@ levels(train_data$Tag)
 Also, there is not a blank categorical cell in the TAG column, since the line above contain only letters.  
 These results means the dataset is usable and we can start try to extract relevant information from it.
 
-## Graphs of data
+### Graphs of data {.tabset .tabset-fade .tabset-pills}
 
-In order to observe how the data is spread in each column, some graphs  and tables were created. The ID column contain a different number to identify each question, and this nuber is never repeated. By this way, we will not use this column in the analysis.
+In order to observe how the data is spread in each column, some graphs  and tables were created. The ID column contain a different number to identify each question, and this nuber is never repeated. By this way, we will not use this column in the analysis.  
 
-### Tag
+#### Tag 
 ```{r}
 table(train_data$Tag)
 ```
@@ -104,14 +115,16 @@ ggplot(train_data, aes(x=Tag)) +
   xlab("TAG")
 ```
 
-### Reputation
+#### Reputation
 ```{r}
 summary(train_data$Reputation)
 reputation_groups <- cut(train_data$Reputation, breaks = 10, labels = FALSE)
 table(reputation_groups)
 ```
 <br>
-From the table above, we observe almost of Reputation data is in the first column. This means most of the Reputaion is low, and in this case, a graphic will not add any knowledge.
+From the table above, we observe that almost all of Reputation data is in the first column. This means most of the Reputation is low, and in this case, a graphic will not add any knowledge.  
+
+#### Answers
 
 ```{r, eval=TRUE}
 summary(train_data$Answers)
@@ -124,6 +137,8 @@ ggplot(train_data, aes(x=Answers)) +
   ylab("Frequency")+
   xlab("Answers")
 ```
+
+#### Usernames
 
 ```{r, eval=TRUE}
 summary(train_data$Username)
@@ -149,6 +164,7 @@ table(Views)
 #hist(logViews)
 ```
 
+#### Upvotes
 
 ```{r, eval=TRUE}
 summary(train_data$Upvotes)
@@ -175,19 +191,19 @@ train_data <- train_data %>%
   select( -Username)
 ```
 
-# Predictive Models
+## PREDICTIVE MODELS {.tabset .tabset-fade .tabset-pills}
 
 We start here the data forecast for this problem, Only to emphasize, the evaluation metric for this competition is RMSE (root mean squared error).  
 The RMSE is a standard way to measure the error of a model in predicting quantitative data. Formally it is defined as 
 $$RMSE = \sqrt{\sum(ŷ_i - y_i)/n}$$
 The RMSE can be tought as a distance between the vector of predicted values and the vector of observed values.
 
-## Linear Regression Model 
+### Linear Regression Model  
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
 
 set.seed(seed = 2019)
-split = sample.split(train_data, SplitRatio = 0.7)#SplitRatio indicates the size of the training set
+split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
@@ -221,8 +237,10 @@ plot(lmmodel, which=5, caption = list("", "", "", "", "Residuals vs Leverage"))
 This plot helps us to find influential cases (i.e., subjects) if any. Not all outliers are influential in linear regression analysis (whatever outliers mean). Even though data have extreme values, they might not be influential to determine a regression line. That means, the results wouldn’t be much different if we either include or exclude them from analysis. They follow the trend in the majority of cases and they don’t really matter; they are not influential. On the other hand, some cases could be very influential even if they look to be within a reasonable range of the values. They could be extreme cases against a regression line and can alter the results if we exclude them from analysis. Another way to put it is that they don’t get along with the trend in the majority of the cases.
 
 Source of graphic explanation: [University of Virginia](https://data.library.virginia.edu/diagnostic-plots/)
+<br>
+The following step is to predict the values based on this model, and calculate the RMSE for the obtained results.  
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
 predict_lm <- predict(lmmodel, newdata =  test_set, 
                                         type = "response",
                                         interval = "confidence",
@@ -234,16 +252,20 @@ test_set$predict <- predict$fit
 
 ggplot()+
   geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
-  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")
-
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")+
+  theme_bw()+
+  ylab("Predict, Upvotes")+
+  xlab("ID")
+  
 rmse_lm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 ```
 
-The RMSE for the testing sample is `r rmse_lm`.  
-<br>
-To generate the results for the Testing sample, just run the code below, which generates a .csv file with the respective results. 
+The RMSE for the testing sample is `r rmse_lm`.
 
-```{r, eval=FALSE}
+<br>
+To generate the results for the Testing sample, run the code below for the testing sample, after the data preparation, in the same way as the training sample. This will generate a .csv file with the respective results, which can be send to the site for automatic evaluation. 
+
+```{r, eval=FALSE, echo=TRUE, warning=FALSE, message=FALSE}
 test_data = read.csv('test_data.csv')
 test_data$predict <- predict.lm(lmmodel, newdata = test_data, 
                                 type = "response",
@@ -257,19 +279,20 @@ write.table(cbind(test_data$ID,test_data$predict),
             sep = ",", quote = FALSE, col.names = c('ID','Upvotes'), 
             row.names=F)
 ```
+<br>
+This procedure is the same for any other techniques.
 
+### Non-Linear Regresion Model  
 
-## Non-Linear Regresion Model
-
-```{r, eval=TRUE}
-set.seed(seed = 2020)
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+set.seed(seed = 2019)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
 
-glmmodel <- glm(Upvotes ~ ., 
+glmmodel <- glm(Upvotes ~ +Tag +Reputation +Answers +Views, 
                 train_set, family = quasi(link = "identity"))
-#anova(glmmodel)
+
 summary(glmmodel)
 #plot(glmmodel)
 
@@ -277,16 +300,22 @@ test_set$predict <- predict.glm(glmmodel, newdata =  test_set,
                                 type = "response",
                                 family = poisson())
 
-nlm_rmse <- rmse(test_set$Upvotes, test_set$predict)
+ggplot()+
+  geom_point(data=test_set, aes(x=ID, y=Upvotes), fill="red") +
+  geom_point(data=test_set, aes(x=ID, y=predict), fill="blue", colour="darkblue")+
+  theme_bw()+
+  ylab("Upvotes, Predicted")+
+  xlab("ID")
+
+rmse_nlm <- rmse(test_set$Upvotes, test_set$predict)
 #3624  3108
 ```
 
-The RMSE for the testing sample is `r nlm_rmse`.
+The RMSE for the testing sample is ` rmse_nlm`.
 
-## Neural net prediction
+### Neural net prediction  
 
-```{r, eval=FALSE}
-library(neuralnet)
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
 train_net <- train_data %>%
   select(-Tag, - Upvotes)
 
@@ -319,13 +348,9 @@ nnmodel <- neuralnet(train_net$Upvotes ~ +Reputation +Answers +Username +Views,
 #plot(nnmodel)
 ```
 
-## XGBoost analysis
+### XGBoost analysis  
 
 ```{r, eval=TRUE, warning=FALSE, message=FALSE}
-
-if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
-if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
-if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
 
 number <- 2020
 set.seed(seed = number)
@@ -376,7 +401,7 @@ pred <- predict(xgbmodel, newdata = mtest_set)
 
 result <- as.data.frame(cbind(test_set$Upvotes, pred))
 
-xgb_rmse <- as.integer(rmse(test_set$Upvotes, pred))
+rmse_xgb <- as.integer(rmse(test_set$Upvotes, pred))
 
 ggplot(result,aes(result$pred, result$V1)) + geom_point(color = "darkred", alpha = 0.5) + 
   geom_smooth(method=lm)+ ggtitle('Linear Regression ') + ggtitle("Extreme Gradient Boosting: Prediction vs Test Data") +
@@ -389,10 +414,75 @@ rm(split, test_label,test_set, train_label, train_set, testdumb, traindumb,
    watchlist,xgbmodel, xgb_param, result, eval, mtest_set, mtrain_set)
 ```
 
-For the XGBoost analysis, the RMSE for the testing sample is `r xgb_rmse`.
+For the XGBoost analysis, the RMSE for the testing sample is ` rmse_xgb`.
 
-# Session Info
+### Keras analysis  
 
-```{r sessionInfo, eval=FALSE}
-sessionInfo()
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+
+train_data = read.csv('train_data.csv')
+
+train_data <- train_data %>%
+  select(Upvotes, everything())
+
+train_data %<>% mutate_if(is.factor, as.numeric)
+
+#train_data <- train_data %>% filter(train_data$Views < 100000)
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x)))}
+
+maxmin_data <- as.data.frame(lapply(train_data, normalize))
+
+maxmin_data<-as.matrix(maxmin_data)
+
+ind <- sample(2, nrow(maxmin_data), replace = T, prob = c(.7, .3))
+train_set <- maxmin_data[ind==1, 2:7]
+test_set <- maxmin_data[ind==2, 2:7]
+
+train_target <- maxmin_data[ind==1, 1]
+test_target <- maxmin_data[ind==2, 1]
 ```
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+k_model <- keras_model_sequential() 
+k_model %>% 
+  layer_dense(units = 18, activation = 'relu', 
+              kernel_initializer='RandomNormal', 
+              input_shape = c(6)) %>% 
+  layer_dense(units = 12, activation = 'relu') %>%
+  layer_dense(units = 1, activation = 'linear')
+
+#summary(k_model)
+
+k_model %>% compile(
+  loss = 'mean_squared_error',
+  optimizer = 'adam',
+  metrics = c('mae')
+)
+
+history <- k_model %>% fit(
+  train_set, train_target, 
+  epochs = 2, batch_size = 50, 
+  validation_split = 0.1
+)
+#epoch = 7 - ~1400 epoch = 2 - ~2100
+
+k_model %>% evaluate(test_set, test_target)
+
+pred <- data.frame(y = predict(k_model, as.matrix(test_set)))
+predicted=pred$y * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes)
+actual=test_target * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes)
+result <- data.frame(predicted,actual)
+
+rmse_keras <- as.integer(rmse(result$actual, result$predicted))
+
+```
+The RMSE for this model is `rmse_keras`.
+
+## SUMMARY RESULTS
+
+| METHOD  | RMSE |
+|:---------:|:----------:|
+Linear Regresion | `r rmse_lm`  
+Non-linear Regresion | `r rmse_nlm`  
+XGBoost Analysis | `r rmse_xgb`
+Keras Analysis |  `r rmse_keras`
