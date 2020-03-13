@@ -256,8 +256,6 @@ train_split <- initial_split(train_data, prop = 0.7)
 train_set <- training(train_split)
 test_set  <- testing(train_split)
 
-
-
 # Building our Artificial Neural Network
 model_keras <- keras_model_sequential()
 

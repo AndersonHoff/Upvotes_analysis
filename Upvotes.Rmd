@@ -414,7 +414,7 @@ rm(split, test_label,test_set, train_label, train_set, testdumb, traindumb,
    watchlist,xgbmodel, xgb_param, result, eval, mtest_set, mtrain_set)
 ```
 
-For the XGBoost analysis, the RMSE for the testing sample is ` rmse_xgb`.
+For the XGBoost analysis, the RMSE for the testing sample is `r rmse_xgb`.
 
 ### Keras analysis  
 
