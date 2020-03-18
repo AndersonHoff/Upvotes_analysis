@@ -308,7 +308,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">UpVotes Challenge: Analysis and Prediction</h1>
 <h4 class="author"><em>Author: Anderson Hoff</em></h4>
-<h4 class="date"><em>Last update: 13 março, 2020</em></h4>
+<h4 class="date"><em>Last update: 18 março, 2020</em></h4>
 
 </div>
 
@@ -958,10 +958,10 @@ history &lt;- k_model %&gt;% fit(
 
 k_model %&gt;% evaluate(test_set, test_target)</code></pre>
 <pre><code>## $loss
-## [1] 2,497951e-05
+## [1] 2,670974e-05
 ## 
 ## $mean_absolute_error
-## [1] 0,001139073</code></pre>
+## [1] 0,00138919</code></pre>
 <pre class="r"><code>pred &lt;- data.frame(y = predict(k_model, as.matrix(test_set)))
 predicted=pred$y * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes)
 actual=test_target * abs(diff(range(train_data$Upvotes))) + min(train_data$Upvotes)
@@ -995,7 +995,7 @@ rmse_keras &lt;- as.integer(rmse(result$actual, result$predicted))</code></pre>
 </tr>
 <tr class="even">
 <td align="center">Keras Analysis</td>
-<td align="center">3075</td>
+<td align="center">3179</td>
 </tr>
 </tbody>
 </table>
