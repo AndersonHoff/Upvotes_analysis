@@ -76,12 +76,14 @@ Views | Number of times question has been viewed
 
 As can be seen, the target is to predict the number of positive votes a question receive, based on the features described above.  
 The table below show the type of each column of the data. Apart from "TAG", all other columns are numeric.
+
 ```{r, eval=TRUE, echo=FALSE}
 glimpse(train_data)
 
 summary(train_data)
 
 ```
+
 It is important to identify missing values (NA's) on the tables, from both numeric ans categorical data. The result obtained below tell us that there are not empty cells in the numeric columns.
 
 ```{r, eval=TRUE, echo=TRUE}
@@ -285,7 +287,7 @@ This procedure is the same for any other techniques.
 ### Non-Linear Regresion Model  
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-set.seed(seed = 2019)
+set.seed(seed = 2020)
 split = sample.split(train_data, SplitRatio = 0.7)
 train_set = subset(train_data, split == TRUE)
 test_set = subset(train_data, split == FALSE)
@@ -476,6 +478,7 @@ result <- data.frame(predicted,actual)
 rmse_keras <- as.integer(rmse(result$actual, result$predicted))
 
 ```
+<br>
 The RMSE for this model is `rmse_keras`.
 
 ## SUMMARY RESULTS
@@ -486,3 +489,4 @@ Linear Regresion | `r rmse_lm`
 Non-linear Regresion | `r rmse_nlm`  
 XGBoost Analysis | `r rmse_xgb`
 Keras Analysis |  `r rmse_keras`
+
