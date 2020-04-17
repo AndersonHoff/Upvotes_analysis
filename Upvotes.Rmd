@@ -26,31 +26,29 @@ Rscript -e "rmarkdown::render('Upvotes.Rmd', c('html_document'), clean=FALSE)"
 <br>
 The main objective of this project is to learn and practice some technical duties about data analysis and graphic generation. Also, I tested different predictive models, focused on the behavior and differences between them. Last, but not least, that is an excellent oportunity to practice my English skills.  
 
-The challenge of this problem is to identify the best question authors from an on-line question and answer platform. This identification will bring more insight into increasing the user engagement. By trhis way, given the tag of the question, number of views received, number of answers, username and reputation of the question author, the problem requires you to predict the up votes number that determined question will receives.  
+The challenge of this problem is to identify the best question authors from an on-line question and answer platform. This identification will bring more insight into increasing the user engagement. By this way, given the tag of the question, number of views received, number of answers, username and reputation of the question author, the problem requires you to predict the up votes number that determined question will receives.  
 
 This test is provided by [Analytics Vidhya](https://datahack.analyticsvidhya.com/contest/enigma-codefest-machine-learning-1/).  
 
 ## REQUIRED PACKAGES
 
 ```{r library, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
-if(!require(dplyr)) {istall.packages("dplyr")} else {library(dplyr)}
-if(!require(ggplot2)) {install.packages("ggplot2")} else {library(ggplot2)}
-if(!require(magrittr)) {install.packages("magrittr")} else {library(magrittr)} # for pipe
-if(!require(caTools)) {install.packages("caTools")} else {library(caTools)} # for data partition
-if(!require(ModelMetrics)) {install.packages("ModelMetrics")} else {library(ModelMetrics)} # for rmse
-if(!require(corrplot)) {install.packages("corrplot")} else {library(corrplot)} # correlation matrix
-if(!require(knitr)) {install.packages("knitr")} else {library(knitr)} # for floating tables 
+#if(!require(dplyr)) {istall.packages("dplyr")} else {library(dplyr)}
+library(dplyr)
+library(ggplot2)
+library(magrittr) # for pipe
+library(caTools) # for data partition
+library(ModelMetrics) # for rmse
+library(corrplot) # correlation matrix
+library(knitr) # for floating tables 
 library(neuralnet)
-#XGBoost analysis
-if(!require (xgboost)) {install.packages("xgboost")} else {library(xgboost)}
-if(!require (Matrix)) {install.packages("Matrix")} else {library(Matrix)}
-if(!require (Ckmeans.1d.dp)) {install.packages("Ckmeans.1d.dp")} else {library(Ckmeans.1d.dp)}
-if(!require(keras)) {install.packages("keras")} else {library(keras)}
+library(xgboost)
+library(Matrix)
+library(Ckmeans.1d.dp)
+library(keras)
 ```
 
-## DATA ANALYSIS
-
-### Load data
+## DATA
 
 The data used in this analysis is composed by a training set and a test set. In this part I will be dealing with the training dataset. This is how it looks like.
 
@@ -80,7 +78,7 @@ The table below show the type of each column of the data. Apart from "TAG", all 
 ```{r, eval=TRUE, echo=FALSE}
 glimpse(train_data)
 
-summary(train_data)
+#summary(train_data)
 
 ```
 
@@ -96,28 +94,30 @@ levels(train_data$Tag)
 Also, there is not a blank categorical cell in the TAG column, since the line above contain only letters.  
 These results means the dataset is usable and we can start try to extract relevant information from it.
 
-### Graphs of data {.tabset .tabset-fade .tabset-pills}
+## GRAPHS {.tabset .tabset-fade .tabset-pills}
 
-In order to observe how the data is spread in each column, some graphs  and tables were created. The ID column contain a different number to identify each question, and this nuber is never repeated. By this way, we will not use this column in the analysis.  
+In order to observe how the data is spread in each column, some graphs  and tables were created. The ID column contain a different number to identify each question, and this number is never repeated. By this way, we will not use this column in the analysis. The results are separated for each column in the tabset below. 
 
-#### Tag 
+### Tag 
+
+The table below show us the question category is spread in different letters, and the graph indicates that it is reasobly distributed between them.  
+
 ```{r}
 table(train_data$Tag)
 ```
 <br>
-The table above show us the question category is spread in different letters, and the graph below indicates it is reasobly distributed between them.  
 
 ```{r}
 ggplot(train_data, aes(x=Tag)) +
   geom_bar(aes(fill=Tag)) + 
-  ggtitle("TAG frequency")+
+  ggtitle("TAG")+
   coord_flip()+
   theme_bw()+
   ylab("Frequency")+
   xlab("TAG")
 ```
 
-#### Reputation
+### Reputation
 ```{r}
 summary(train_data$Reputation)
 reputation_groups <- cut(train_data$Reputation, breaks = 10, labels = FALSE)
@@ -126,38 +126,45 @@ table(reputation_groups)
 <br>
 From the table above, we observe that almost all of Reputation data is in the first column. This means most of the Reputation is low, and in this case, a graphic will not add any knowledge.  
 
-#### Answers
+### Answers
 
 ```{r, eval=TRUE}
 summary(train_data$Answers)
 
 ggplot(train_data, aes(x=Answers)) +
-  geom_bar(aes(fill=Answers)) + 
-  ggtitle("Answers frequency")+
+  geom_bar(fill = "blue") + 
+  ggtitle("Answers")+
   coord_flip()+
   theme_bw()+
   ylab("Frequency")+
   xlab("Answers")
 ```
 
-#### Usernames
+From the diagram above, most of the questions have a small number of answers. One question that arises is if there is a correlation between the number of answers and the upvotes. 
+
+### Usernames
 
 ```{r, eval=TRUE}
 summary(train_data$Username)
+
 Usernames <- cut(train_data$Username, breaks = 10, labels = FALSE)
 table(Usernames)
+hist(Usernames)
 
-ggplot(train_data, aes(x=Usernames)) +
-  geom_bar(aes(fill=Usernames)) + 
-  ggtitle("Usernames frequency")+
-  coord_flip()+
-  ylab("Number of frequency")+
-  xlab("Usernames")
+#ggplot(train_data, aes(x=Username)) +
+#  geom_bar(aes(fill = Username)) + 
+#  ggtitle("Usernames frequency")+
+#  coord_flip()+
+#  ylab("Number of frequency")+
+#  xlab("Usernames")
+```
 
-
+### Views
+```{r}
 summary(train_data$Views)
 Views <- cut(train_data$Views, breaks = 10, labels = FALSE)
 table(Views)
+hist(Views)
 ```
 
 ```{r, echo=FALSE}
@@ -166,24 +173,33 @@ table(Views)
 #hist(logViews)
 ```
 
-#### Upvotes
+### Upvotes
 
 ```{r, eval=TRUE}
 summary(train_data$Upvotes)
 Upvotes <- cut(train_data$Upvotes, breaks = 10, labels = FALSE)
 table(Upvotes)
-
-numeric.var <- sapply(train_data, is.numeric)
-corr.matrix <- cor(train_data[,numeric.var])
-corrplot(corr.matrix, main="\n\nCorrelation Plot for Numerical Variables", 
-         method="circle")
+hist(Upvotes)
 ```
+
+### Corr. Matrix
 
 In statistics, the correlation coefficient *cc* measures the strength and direction of a linear relationship between two variables on a scatterplot. The value of *cc* is always between +1 and –1. To interpret its value, see which of the following values your correlation *cc* is closest to: 
 
 * -1 : indicates a strong negative correlation (if one variable increases, the other decreases).  
 * 0 : there is no association between the two variables.  
-* +1 : indicates a stron positive correlation: (both variables vary in the same way).  
+* +1 : indicates a stron positive correlation: (both variables vary in the same way).
+
+```{r}
+numeric.var <- sapply(train_data, is.numeric)
+corr.matrix <- cor(train_data[,numeric.var])
+corrplot(corr.matrix, order = "original", type="upper", diag = TRUE, tl.pos = "n", cl.pos = "n")
+corrplot(corr.matrix, add = TRUE, type = "lower", method = "number", 
+         order = "original", col = "black", diag = TRUE, tl.pos = "d", tl.cex = 0.77, cl.pos = "n")
+
+```
+
+  
 <br>
 From the results, we observe there is no correlation between Upvotes (the target) and ID or Username. Since there is one ID for each question, this result is reasonable. The same occurs for Username.  
 Due to these results, we skip these two columns for the training process.
@@ -309,7 +325,7 @@ ggplot()+
   ylab("Upvotes, Predicted")+
   xlab("ID")
 
-rmse_nlm <- rmse(test_set$Upvotes, test_set$predict)
+rmse_nlm <- as.integer(rmse(test_set$Upvotes, test_set$predict))
 #3624  3108
 ```
 
@@ -482,6 +498,8 @@ rmse_keras <- as.integer(rmse(result$actual, result$predicted))
 The RMSE for this model is `rmse_keras`.
 
 ## SUMMARY RESULTS
+
+The results of RMSE for each model is summarized below. There are some parameters to be fine tuned, which may decrease these values.  
 
 | METHOD  | RMSE |
 |:---------:|:----------:|
