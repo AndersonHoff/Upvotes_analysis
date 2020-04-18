@@ -477,7 +477,7 @@ k_model %>% compile(
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 k_hist <- k_model %>% fit(
   train_set, train_target, 
-  epochs = 2, batch_size = 80, 
+  epochs = 8, batch_size = 80, 
   validation_split = 0.1
 )
 
